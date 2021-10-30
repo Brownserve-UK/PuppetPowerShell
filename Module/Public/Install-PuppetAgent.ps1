@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Short description
+    Installs Puppet on a machine
 .DESCRIPTION
     Long description
 .EXAMPLE
@@ -50,31 +50,32 @@ function Install-PuppetAgent
         if ($IsMacOS)
         {
             Write-Verbose "Installing Puppet-Agent for macOS"
+            $RootCheck = whoami
             try
             {
                 $BrewCheck = Get-Command 'brew'
             }
-            catch
-            {
-                
-            }
+            catch {}
             if ($BrewCheck -and !$ExactVersion)
             {
                 Write-Verbose "Using homebrew"
+                if ($RootCheck -eq 'root')
+                {
+                    throw "Running as root, this will not work with homebrew."
+                }
                 # In cases where we don't want an exact version _and_ homebrew is available we'll install using that
                 # See here for more info https://github.com/puppetlabs/homebrew-puppet
                 $Cask = "puppetlabs/puppet/puppet-agent-$MajorVersion"
+                Write-Verbose "Installing $Cask"
                 & brew install $Cask
                 if ($LASTEXITCODE -ne 0)
                 {
                     throw "Failed to install Puppet using brew"
                 }
             }
-
             if (!$BrewCheck -or $ExactVersion)
             {
                 Write-Warning "Homebrew not installed or exact version specified, falling back to legacy method"
-                $RootCheck = whoami
                 if ($RootCheck -ne 'root')
                 {
                     throw "Legacy install method requires root on macOS"
@@ -84,38 +85,57 @@ function Install-PuppetAgent
                 {
                     throw "Failed to determine macOS version"
                 }
+                Write-Verbose "macOS version is $OSVersion"
                 $BaseURL = "http://downloads.puppet.com/mac/puppet$($MajorVersion)"
+                Write-Verbose "Querying $BaseURL for supported operating systems"
                 # Get the contents of that folder and see if we can find a match for our OS version
-                $SupportedOS = Invoke-WebRequest $BaseURL | Select-Object -ExpandProperty Links
+                try
+                {
+                    $SupportedOS = Invoke-WebRequest $BaseURL | Select-Object -ExpandProperty Links
+                }
+                catch
+                {
+                    throw "Failed to query $BaseURL.`n$($_.Exception.Message)"
+                }
 
                 if (!$SupportedOS)
                 {
-                    throw "TBC"
+                    throw "No results returned from $BaseURL"
                 }
 
-                # Try getting the most exact version we can find
-                switch ($SupportedOS.href)
+                # See if our OS is compatible...
+                foreach ($Link in $SupportedOS.href)
                 {
-                    "$($OSversion.Major)/"
+                    # Try getting the most exact version we can find
+                    switch ($Link)
                     {
-                        $MatchedVersion = "$($OSversion.Major)/"
+                        "$($OSversion.Major)/"
+                        {
+                            $MatchedVersion = "$($OSversion.Major)/"
+                        }
+                        "$($OSversion.Major).$($OSVersion.Minor)/"
+                        {
+                            $MatchedVersion = "$($OSversion.Major).$($OSVersion.Minor)/"
+                        }
                     }
-                    "$($OSversion.Major).$($OSVersion.Minor)/"
+                    # Break out of the loop when we've found a match!
+                    if ($MatchedVersion)
                     {
-                        $MatchedVersion = "$($OSversion.Major).$($OSVersion.Minor)/"
-                    }
-                    default
-                    {
-                        throw "Unable to find a supported version for macOS $($OSVersion.ToString())"
+                        Write-Verbose "Matched '$MatchedVersion'"
+                        break
                     }
                 }
+                if (!$MatchedVersion)
+                {
+                    throw "Unable to find a supported version of Puppet agent for macOS $($OSVersion.toString())"
+                }
                 # Only support x86_64 at present
-                $BaseURL = $BaseURL + "/$MatchedVersion" + "x86_84"
+                $BaseURL = $BaseURL + "/$MatchedVersion" + "x86_64"
 
                 # Grab the exact version if we've specified one otherwise just get latest
                 if ($ExactVersion)
                 {
-                    $DownloadURL = $BaseURL + "/puppet-agent-$($ExactVersion.ToString())-1.osx$($MatchedVersion).dmg"
+                    $DownloadURL = $BaseURL + "/puppet-agent-$($ExactVersion.ToString())-1.osx$($MatchedVersion -replace '\/','').dmg"
                 }
                 else
                 {
@@ -123,7 +143,122 @@ function Install-PuppetAgent
                 }
 
                 # Download it
-                Invoke-WebRequest $DownloadURL
+                $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet-agent.dmg'
+                Write-Verbose "Downloading from $DownloadURL to $TempFile"
+                try
+                {
+                    Invoke-WebRequest $DownloadURL -OutFile $TempFile
+                }
+                catch
+                {
+                    throw "Failed to download Puppet agent from $DownloadURL.`n$($_.Exception.Message)"
+                }
+                Write-Verbose "Mounting $TempFile"
+                & hdiutil mount $TempFile -quiet
+                if ($LASTEXITCODE -ne 0)
+                {
+                    throw "Failed to mount $TempFile"
+                }
+                try
+                {
+                    $PuppetDrive = Get-ChildItem '/Volumes/' | Where-Object { $_.Name -like 'puppet-agent*' }
+                }
+                catch
+                {
+                    throw "Failed to query Puppet drive.`n$($_.Exception.Message)"
+                }
+                if ($PuppetDrive.count -gt 1)
+                {
+                    throw "Too many Puppet drives returned!`nExpected 1 got $($PuppetDrive.count).`n$($PuppetDrive.PSPath)"
+                }
+                if (!$PuppetDrive)
+                {
+                    throw "No Puppet drives found"
+                }
+                # Get the pkg
+                $PuppetPKG = Get-ChildItem $PuppetDrive | Where-Object { $_.Name -like '*.pkg' } | Select-Object -ExpandProperty 'PSPath' | Convert-Path
+                if (!$PuppetPKG)
+                {
+                    # Clean-up
+                    & hdiutil unmount $PuppetDrive -force -quiet
+                    throw "Cannot find Puppet agent pkg installer"
+                }
+                Write-Verbose "Installing $PuppetPKG"
+                & installer -pkg $PuppetPKG -target /
+                if ($LASTEXITCODE -ne 0)
+                {
+                    # Clean-up
+                    & hdiutil unmount $PuppetDrive -force -quiet
+                    throw "Failed to install Puppet agent"
+                }
+                # Clean-up
+                & hdiutil unmount $PuppetDrive -force -quiet
+            }
+        }
+        if ($IsWindows)
+        {
+            $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+            $Administrator = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            if (!$Administrator)
+            {
+                throw "Must be run as administrator"
+            }
+            try
+            {
+                $ChocoCheck = Get-Command 'choco'
+            }
+            catch {}
+            if ($ChocoCheck)
+            {
+                if (!$ExactVersion)
+                {
+                    # If we've only specified the major version then we need to do some work
+                    # Get all versions of the package
+                    $AvailableVersions = (& choco list -e puppet-agent -a -r) -replace 'puppet-agent\|', ''
+
+                    # As it stands the latest version is always first in the array
+                    $VersionToInstall = $AvailableVersions[0]
+                    Write-Verbose "Latest versions appears to be $VersionToInstall"
+                }
+                else
+                {
+                    $VersionToInstall = $ExactVersion.ToString()
+                }
+                Write-Verbose "Attempting to install $VersionToInstall"
+                & choco install 'puppet-agent' --version $VersionToInstall
+                if ($LASTEXITCODE -ne 0)
+                {
+                    throw "Failed to install Puppet agent"
+                }
+            }
+            else
+            {
+                Write-Warning "Chocolatey not available, falling back to legacy method"
+                $BaseURL = "http://downloads.puppetlabs.com/windows/puppet$($MajorVersion)"
+
+                if ($ExactVersion)
+                {
+                    $DownloadURL = $BaseURL + "/puppet-agent-$($ExactVersion.ToString())-x64.msi"
+                }
+                else
+                {
+                    $DownloadURL = $BaseURL + "/puppet-agent-x64-latest.msi"
+                }
+
+                # Download it
+                $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet-agent.msi'
+                Write-Verbose "Downloading from $DownloadURL to $TempFile"
+                try
+                {
+                    Invoke-WebRequest -Uri $DownloadURL -OutFile $TempFile
+                }
+                catch
+                {
+                    throw "Failed to download Puppet agent.`n$($_.Exception.Message)"
+                }
+
+                # Install it
+                & msiexec /qn /norestart /i $TempFile
             }
         }
     }
