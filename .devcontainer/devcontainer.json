@@ -3,7 +3,7 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.194.0/containers/ubuntu
 {
 	"name": "Linux containers",
-	"dockerComposeFile": "./docker-compose.yaml",
+	"dockerComposeFile": "docker-compose.yaml",
 	// Change the below to the name of the container you want to connect to.from the docker-compose.yaml file.
 	"service": "centos",
 
@@ -26,5 +26,5 @@
 	// "postCreateCommand": "uname -a",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode"
+	//"remoteUser": "vscode"
 }
