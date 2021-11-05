@@ -6,14 +6,13 @@
     You can either specify the major version that you want installed whereby the latest version for that release will be installed,
     or you can specify a specific version. (e.g. 6.10.2)
 .EXAMPLE
-    PS C:\> <example usage>
-    Explanation of what the example does
-.INPUTS
-    Inputs (if any)
-.OUTPUTS
-    Output (if any)
-.NOTES
-    General notes
+    Install-PuppetAgent -MajorVersion 6
+
+    This would install the latest version of Puppet 6 for your operating system.
+.EXAMPLE
+    Install-PuppetAgent -ExactVersion 6.10.2
+
+    This would install Puppet 6.10.2 for your operating system.
 #>
 function Install-PuppetAgent
 {
