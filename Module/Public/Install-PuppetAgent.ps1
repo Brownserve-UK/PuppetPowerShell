@@ -43,10 +43,6 @@ function Install-PuppetAgent
         {
             [int]$MajorVersion = $ExactVersion.Major
         }
-        if ((Get-Command 'puppet'))
-        {
-            throw "Puppet is already installed on this system"
-        }
     }
     
     process
@@ -287,6 +283,13 @@ function Install-PuppetAgent
             {
                 '\"CentOS Linux\"'
                 {
+                    Write-Verbose "Checking to see if Puppet agent is already installed."
+                    $PuppetCheck = & yum list installed | Where-Object { $_ -like 'puppet-agent*' }
+                    if ($PuppetCheck)
+                    {
+                        Write-Host "Puppet agent already installed:`n$PuppetCheck"
+                        break
+                    }
                     Write-Verbose "Installing Puppet agent for CentOS"
                     $CentOSVersion = (& awk -F= '/^VERSION_ID/{print $2}' /etc/os-release) -replace '\"', ''
                     $RepositoryURL = "https://yum.puppetlabs.com/puppet$MajorVersion-release-el-$CentOSVersion.noarch.rpm"
@@ -307,7 +310,6 @@ function Install-PuppetAgent
                         throw "Failed to add yum repository."
                     }
                     Write-Verbose "Installing Puppet agent"
-                    & yum update
                     if ($ExactVersion)
                     {
                         & yum install puppet-agent-$ExactVersion -y
@@ -323,6 +325,12 @@ function Install-PuppetAgent
                 }
                 '\"(?:Ubuntu|Debian)\"'
                 {
+                    # Do a quick check to see if Puppet is already installed
+                    $PuppetCheck = & dpkg --get-selections | Where-Object { $_ -like 'puppet-agent*' }
+                    if ($PuppetCheck)
+                    {
+                        throw "Puppet is already installed on your system"
+                    }
                     Write-Verbose "Installing Puppet agent for Debian based OS"
                     $ReleaseName = & lsb_release -c -s
                     $RepositoryURL = "http://apt.puppet.com/puppet$MajorVersion-release-$($ReleaseName).deb"
