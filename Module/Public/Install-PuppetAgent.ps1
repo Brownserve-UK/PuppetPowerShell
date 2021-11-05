@@ -1,8 +1,10 @@
 <#
 .SYNOPSIS
-    Installs Puppet on a machine
+    Installs Puppet agent on a machine
 .DESCRIPTION
-    Long description
+    Installs the requested version of Puppet agent for your operating system.
+    You can either specify the major version that you want installed whereby the latest version for that release will be installed,
+    or you can specify a specific version. (e.g. 6.10.2)
 .EXAMPLE
     PS C:\> <example usage>
     Explanation of what the example does
@@ -356,10 +358,14 @@ function Install-PuppetAgent
                     Write-Verbose "Installing puppet-agent"
                     if ($ExactVersion)
                     {
-                        & apt-get install -y puppet-agent=$ExactVersion
+                        # The packages seem to be in the format of "puppet-agent 6.24.0-1focal"
+                        $VersionToInstall = "$ExactVersion-1$ReleaseName"
+                        Write-Verbose "Installing $VersionToInstall"
+                        & apt-get install -y puppet-agent=$VersionToInstall
                     }
                     else
                     {
+                        Write-Verbose "Installing latest version"
                         & apt-get install -y puppet-agent
                     }
                     if ($LASTEXITCODE -ne 0)
