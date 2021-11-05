@@ -323,13 +323,15 @@ function Install-PuppetAgent
                         throw "Failed to install Puppet agent"
                     }
                 }
-                '\"(?:Ubuntu|Debian)\"'
+                '\"(?:Ubuntu|Debian GNU/Linux)\"'
                 {
                     # Do a quick check to see if Puppet is already installed
+                    Write-Verbose "Checking to see if Puppet agent is already installed."
                     $PuppetCheck = & dpkg --get-selections | Where-Object { $_ -like 'puppet-agent*' }
                     if ($PuppetCheck)
                     {
-                        throw "Puppet is already installed on your system"
+                        Write-Host "Puppet agent is already installed on your system."
+                        break
                     }
                     Write-Verbose "Installing Puppet agent for Debian based OS"
                     $ReleaseName = & lsb_release -c -s
