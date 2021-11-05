@@ -43,14 +43,19 @@ function Install-PuppetAgent
         {
             [int]$MajorVersion = $ExactVersion.Major
         }
+        if ((Get-Command 'puppet'))
+        {
+            throw "Puppet is already installed on this system"
+        }
     }
     
     process
     {
+        # macOS install method
         if ($IsMacOS)
         {
             Write-Verbose "Installing Puppet-Agent for macOS"
-            $RootCheck = whoami
+            $RootCheck = & id -u
             try
             {
                 $BrewCheck = Get-Command 'brew'
@@ -59,7 +64,7 @@ function Install-PuppetAgent
             if ($BrewCheck -and !$ExactVersion)
             {
                 Write-Verbose "Using homebrew"
-                if ($RootCheck -eq 'root')
+                if ($RootCheck -eq 0)
                 {
                     throw "Running as root, this will not work with homebrew."
                 }
@@ -76,7 +81,7 @@ function Install-PuppetAgent
             if (!$BrewCheck -or $ExactVersion)
             {
                 Write-Warning "Homebrew not installed or exact version specified, falling back to legacy method"
-                if ($RootCheck -ne 'root')
+                if ($RootCheck -ne 0)
                 {
                     throw "Legacy install method requires root on macOS"
                 }
@@ -195,6 +200,7 @@ function Install-PuppetAgent
                 & hdiutil unmount $PuppetDrive -force -quiet
             }
         }
+        # Windows install method
         if ($IsWindows)
         {
             $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -261,6 +267,103 @@ function Install-PuppetAgent
                 & msiexec /qn /norestart /i $TempFile
             }
         }
+        # Linux install method
+        if ($IsLinux)
+        {
+            # We need to check if we're running as root
+            $User = & id -u
+            if ($User -ne 0)
+            {
+                throw "Must be run as root"
+            }
+            Write-Verbose "Checking distribution"
+            $Distribution = & awk -F= '/^NAME/{print $2}' /etc/os-release
+            if (!$Distribution)
+            {
+                throw "Unable to determine Linux distribution"
+            }
+            Write-Verbose "Linux distribution is $Distribution"
+            switch -regex ($Distribution)
+            {
+                '\"CentOS Linux\"'
+                {
+                    Write-Verbose "Installing Puppet agent for CentOS"
+                    $CentOSVersion = (& awk -F= '/^VERSION_ID/{print $2}' /etc/os-release) -replace '\"', ''
+                    $RepositoryURL = "https://yum.puppetlabs.com/puppet$MajorVersion-release-el-$CentOSVersion.noarch.rpm"
+                    $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet.rpm'
+                    Write-Verbose "Downloading from $RepositoryURL to $TempFile"
+                    try
+                    {
+                        Invoke-WebRequest -Uri $RepositoryURL -OutFile $TempFile
+                    }
+                    catch
+                    {
+                        throw "Failed to download Puppet agent.`n$($_.Exception.Message)"
+                    }
+                    Write-Verbose "Installing from $TempFile"
+                    & rpm -Uvh $TempFile
+                    if ($LASTEXITCODE -ne 0)
+                    {
+                        throw "Failed to add yum repository."
+                    }
+                    Write-Verbose "Installing Puppet agent"
+                    & yum update
+                    if ($ExactVersion)
+                    {
+                        & yum install puppet-agent-$ExactVersion -y
+                    }
+                    else
+                    {
+                        & yum install puppet-agent -y
+                    }
+                    if ($LASTEXITCODE -ne 0)
+                    {
+                        throw "Failed to install Puppet agent"
+                    }
+                }
+                '\"(?:Ubuntu|Debian)\"'
+                {
+                    Write-Verbose "Installing Puppet agent for Debian based OS"
+                    $ReleaseName = & lsb_release -c -s
+                    $RepositoryURL = "http://apt.puppet.com/puppet$MajorVersion-release-$($ReleaseName).deb"
+                    $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet.deb'
+                    Write-Verbose "Downloading from $RepositoryURL to $TempFile"
+                    try
+                    {
+                        Invoke-WebRequest -Uri $RepositoryURL -OutFile $TempFile
+                    }
+                    catch
+                    {
+                        throw "Failed to download Puppet repository.`n$($_.Exception.Message)"
+                    }
+                    Write-Verbose "Installing Puppet repository"
+                    & dpkg -i $TempFile
+                    if ($LASTEXITCODE -ne 0)
+                    {
+                        throw "Failed to install Puppet repository."
+                    }
+                    & apt-get update
+                    Write-Verbose "Installing puppet-agent"
+                    if ($ExactVersion)
+                    {
+                        & apt-get install -y puppet-agent=$ExactVersion
+                    }
+                    else
+                    {
+                        & apt-get install -y puppet-agent
+                    }
+                    if ($LASTEXITCODE -ne 0)
+                    {
+                        throw "Failed to install Puppet agent"
+                    }
+                }
+                Default 
+                {
+                    throw "Unsupported Linux distribution '$Distribution'"
+                }
+            }
+        }
+                
     }
     
     end
