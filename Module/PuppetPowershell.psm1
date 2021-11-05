@@ -3,7 +3,6 @@
     Contains PowerShell code to aid in Puppet deployments
 #>
 #Requires -Version 6.0
-#Requires -Module Brownserve.PSTools
 [CmdletBinding()]
 param()
 $ErrorActionPreference = 'Stop'
