@@ -127,7 +127,8 @@ catch
 
 # Place any custom code below, this will be preserved whenever you update your _init script
 ### Start user defined _init steps
-
+$global:RepoTestsDirectory = Join-Path $global:RepoRootDirectory '.build' 'tests' | Convert-Path
+$global:RepoModuleDirectory = Join-Path $global:RepoRootDirectory 'Module' | Convert-Path
 ### End user defined _init steps
 
 # If we're not suppressing output then we'll pipe out a list of cmdlets that are now available to the user along with
