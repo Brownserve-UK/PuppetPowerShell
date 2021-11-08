@@ -10,8 +10,6 @@
     Set-PuppetConfigOption @{environment = 'production'}
 
     This would set the environment to 'production' in the puppet.conf file.
-.NOTES
-    General notes
 #>
 function Set-PuppetConfigOption
 {
