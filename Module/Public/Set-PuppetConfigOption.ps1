@@ -10,6 +10,8 @@
     Set-PuppetConfigOption @{environment = 'production'}
 
     This would set the environment to 'production' in the puppet.conf file.
+.NOTES
+    Puppet does not validate the options your are setting are valid, and neither does this cmdlet.
 #>
 function Set-PuppetConfigOption
 {
