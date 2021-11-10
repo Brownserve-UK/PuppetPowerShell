@@ -33,4 +33,7 @@ RUN apt-get install -y dotnet-sdk-5.0
 ## Install mono (for Nuget.exe)
 RUN apt-get install mono-complete -y
 
+# Install JRE (for Puppetserver)
+RUN apt install default-jre -y
+
 CMD [ "pwsh" ]

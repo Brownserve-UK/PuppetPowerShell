@@ -8,4 +8,7 @@ RUN yum install git -y
 RUN curl https://packages.microsoft.com/config/rhel/8/prod.repo | tee /etc/yum.repos.d/microsoft.repo \
     && yum install -y powershell
 
+# Install Java (for Puppet server)
+RUN yum install java-1.8.0-openjdk -y
+
 CMD [ "pwsh" ]
