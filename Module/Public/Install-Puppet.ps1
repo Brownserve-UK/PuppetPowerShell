@@ -1,20 +1,20 @@
 <#
 .SYNOPSIS
-    Installs Puppet agent on a machine
+    Installs Puppet on a machine
 .DESCRIPTION
-    Installs the requested version of Puppet agent for your operating system.
+    Installs the requested version of Puppet agent/server for your operating system.
     You can either specify the major version that you want installed whereby the latest version for that release will be installed,
     or you can specify a specific version. (e.g. 6.10.2)
 .EXAMPLE
-    Install-PuppetAgent -MajorVersion 6
+    Install-Puppet -MajorVersion 6
 
-    This would install the latest version of Puppet 6 for your operating system.
+    This would install the latest version of Puppet 6 agent for your operating system.
 .EXAMPLE
-    Install-PuppetAgent -ExactVersion 6.10.2
+    Install-Puppet -ExactVersion 6.10.2 -Application 'puppetserver'
 
-    This would install Puppet 6.10.2 for your operating system.
+    This would install Puppet server 6.10.2 for your operating system.
 #>
-function Install-PuppetAgent
+function Install-Puppet
 {
     [CmdletBinding()]
     param
@@ -27,11 +27,25 @@ function Install-PuppetAgent
         # The specific version of Puppet agent to install
         [Parameter(Mandatory = $false)]
         [version]
-        $ExactVersion
+        $ExactVersion,
+
+        # Whether to install Puppet server or Puppet agent
+        [Parameter(Mandatory = $false)]
+        [string]
+        [ValidateSet('puppet-agent', 'puppetserver')]
+        $Application = 'puppet-agent'
     )
     
     begin
     {
+        if ($Application -eq 'puppetserver')
+        {
+            if (!$IsLinux)
+            {
+                Throw "Puppet server is only available on Linux"
+            }
+            # Do we want to do a Java check here?
+        }
         if (!$MajorVersion -and !$ExactVersion)
         {
             throw "One of 'MajorVersion' or 'ExactVersion' must be specified"
@@ -284,14 +298,14 @@ function Install-PuppetAgent
             {
                 '\"CentOS Linux\"'
                 {
-                    Write-Verbose "Checking to see if Puppet agent is already installed."
-                    $PuppetCheck = & yum list installed | Where-Object { $_ -like 'puppet-agent*' }
+                    Write-Verbose "Checking to see if $Application is already installed."
+                    $PuppetCheck = & yum list installed | Where-Object { $_ -like "$Application*" }
                     if ($PuppetCheck)
                     {
-                        Write-Host "Puppet agent already installed:`n$PuppetCheck"
+                        Write-Host "$Application already installed:`n$PuppetCheck"
                         break
                     }
-                    Write-Verbose "Installing Puppet agent for CentOS"
+                    Write-Verbose "Installing $Application for CentOS"
                     $CentOSVersion = (& awk -F= '/^VERSION_ID/{print $2}' /etc/os-release) -replace '\"', ''
                     $RepositoryURL = "https://yum.puppetlabs.com/puppet$MajorVersion-release-el-$CentOSVersion.noarch.rpm"
                     $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet.rpm'
@@ -302,7 +316,7 @@ function Install-PuppetAgent
                     }
                     catch
                     {
-                        throw "Failed to download Puppet agent.`n$($_.Exception.Message)"
+                        throw "Failed to download $Application.`n$($_.Exception.Message)"
                     }
                     Write-Verbose "Installing from $TempFile"
                     & rpm -Uvh $TempFile
@@ -310,31 +324,31 @@ function Install-PuppetAgent
                     {
                         throw "Failed to add yum repository."
                     }
-                    Write-Verbose "Installing Puppet agent"
+                    Write-Verbose "Installing $Application"
                     if ($ExactVersion)
                     {
-                        & yum install puppet-agent-$ExactVersion -y
+                        & yum install $Application-$ExactVersion -y
                     }
                     else
                     {
-                        & yum install puppet-agent -y
+                        & yum install $Application -y
                     }
                     if ($LASTEXITCODE -ne 0)
                     {
-                        throw "Failed to install Puppet agent"
+                        throw "Failed to install $Application"
                     }
                 }
                 '\"(?:Ubuntu|Debian GNU/Linux)\"'
                 {
                     # Do a quick check to see if Puppet is already installed
-                    Write-Verbose "Checking to see if Puppet agent is already installed."
-                    $PuppetCheck = & dpkg --get-selections | Where-Object { $_ -like 'puppet-agent*' }
+                    Write-Verbose "Checking to see if $Application is already installed."
+                    $PuppetCheck = & dpkg --get-selections | Where-Object { $_ -like "$Application*" }
                     if ($PuppetCheck)
                     {
-                        Write-Host "Puppet agent is already installed on your system."
+                        Write-Host "$Application is already installed on your system."
                         break
                     }
-                    Write-Verbose "Installing Puppet agent for Debian based OS"
+                    Write-Verbose "Installing $Application for Debian based OS"
                     $ReleaseName = & lsb_release -c -s
                     $RepositoryURL = "http://apt.puppet.com/puppet$MajorVersion-release-$($ReleaseName).deb"
                     $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet.deb'
@@ -354,22 +368,22 @@ function Install-PuppetAgent
                         throw "Failed to install Puppet repository."
                     }
                     & apt-get update
-                    Write-Verbose "Installing puppet-agent"
+                    Write-Verbose "Installing $Application"
                     if ($ExactVersion)
                     {
                         # The packages seem to be in the format of "puppet-agent 6.24.0-1focal"
                         $VersionToInstall = "$ExactVersion-1$ReleaseName"
                         Write-Verbose "Installing $VersionToInstall"
-                        & apt-get install -y puppet-agent=$VersionToInstall
+                        & apt-get install -y $Application=$VersionToInstall
                     }
                     else
                     {
                         Write-Verbose "Installing latest version"
-                        & apt-get install -y puppet-agent
+                        & apt-get install -y $Application
                     }
                     if ($LASTEXITCODE -ne 0)
                     {
-                        throw "Failed to install Puppet agent"
+                        throw "Failed to install $Application"
                     }
                 }
                 Default 
