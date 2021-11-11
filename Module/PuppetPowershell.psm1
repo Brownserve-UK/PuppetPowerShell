@@ -77,8 +77,8 @@ else
     Write-Host "The following cmdlets from $($MyInvocation.MyCommand) are now available for use:" -ForegroundColor White
     $CompatibleCmdlets | ForEach-Object {
         Write-Host "    $($_.Name) " -ForegroundColor Magenta -NoNewline; Write-Host "|  $($_.Synopsis)" -ForegroundColor Blue
-        Write-Host "For more information please use the 'Get-Help <command-name>' command`n"
     }
+    Write-Host "For more information please use the 'Get-Help <command-name>' command`n"
     if ($IncompatibleCmdlets)
     {
         Write-Warning "The following cmdlets are NOT compatible with your OS and have been disabled:"
