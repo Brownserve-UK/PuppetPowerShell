@@ -37,7 +37,12 @@ function Install-Puppet
         [Parameter(Mandatory = $false)]
         [string]
         [ValidateSet('puppet-agent', 'puppetserver', 'puppet-bolt')]
-        $Application = 'puppet-agent'
+        $Application = 'puppet-agent',
+
+        # Useful in testing to disable package managers
+        [Parameter(DontShow)]
+        [switch]
+        $UseLegacyMethod
     )
     
     begin
@@ -83,7 +88,7 @@ function Install-Puppet
                 $BrewCheck = Get-Command 'brew'
             }
             catch {}
-            if ($BrewCheck -and !$ExactVersion)
+            if ($BrewCheck -and !$ExactVersion -and !$UseLegacyMethod)
             {
                 Write-Verbose "Using homebrew"
                 if ($RootCheck -eq 0)
@@ -271,7 +276,7 @@ function Install-Puppet
                 $ChocoCheck = Get-Command 'choco'
             }
             catch {}
-            if ($ChocoCheck)
+            if ($ChocoCheck -and !$UseLegacyMethod)
             {
                 if ($ExactVersion)
                 {
@@ -289,18 +294,30 @@ function Install-Puppet
 
                         
                         # As it stands the latest version is always first in the array
-                        $VersionToInstall = ($AvailableVersionNumbers | Where-Object { $_.Major -eq $MajorVersion } | Select-Object -First 1).ToString()
+                        try
+                        {
+                            $VersionToInstall = ($AvailableVersionNumbers | Where-Object { $_.Major -eq $MajorVersion } | Select-Object -First 1).ToString()
+    
+                        }
+                        catch
+                        {
+                            throw "Failed to find a version to install."
+                        }
+                        if (!$VersionToInstall)
+                        {
+                            throw "Cannot find a version to install."
+                        }
                         Write-Verbose "Latest version appears to be $VersionToInstall"
                     }
                 }
                 Write-Verbose "Attempting to install $Application"
                 if ($VersionToInstall)
                 {
-                    & choco install $Application --version $VersionToInstall
+                    & choco install $Application --version $VersionToInstall -y
                 }
                 else
                 {
-                    & choco install $Application
+                    & choco install $Application -y
                 }
                 if ($LASTEXITCODE -ne 0)
                 {
@@ -341,7 +358,13 @@ function Install-Puppet
                 }
 
                 # Install it
-                & msiexec /qn /norestart /i $TempFile
+                Write-Verbose "Installing from $TempFile"
+                # Use start process so we can wait for completion
+                $Install = Start-Process 'msiexec' -ArgumentList "/qn /norestart /i $TempFile" -Wait -NoNewWindow -PassThru
+                if ($Install.ExitCode -ne 0)
+                {
+                    throw "Failed to install $Application"
+                }
             }
         }
         # Linux install method
