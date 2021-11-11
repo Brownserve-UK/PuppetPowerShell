@@ -1,0 +1,58 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure("2") do |config|
+    config.vm.box = "bento/ubuntu-18.04"
+    config.vm.synced_folder "../../../", "/vagrant"
+    # config
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 2
+    end
+    # on our Linux boxes we'll install avahi and mdns to allow the boxes to contact each other without dns.
+    # for windows we'll use bonjour
+    config.vm.provision "install", type: "shell", inline: <<-SHELL
+        apt-get install -y avahi-daemon libnss-mdns
+    SHELL
+    config.vm.define "puppetagent-ubuntu" do |pu|
+      pu.vm.hostname = "puppetagent-ubuntu"
+      pu.vm.network "private_network", ip: "192.168.69.3"
+      # Temporary until we get our own vagrant stuff runnng
+      pu.vm.provision "install", type: "shell", inline: <<-SHELL
+        apt-get update && apt-get -y install --no-install-recommends apt-utils 2>&1
+        apt-get -y install git procps lsb-release
+        apt-get install -y wget apt-transport-https software-properties-common
+        wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+        dpkg -i packages-microsoft-prod.deb
+        apt-get update
+        add-apt-repository universe
+        apt-get install -y powershell
+        rm packages-microsoft-prod.deb
+      SHELL
+    end
+    config.vm.define "puppetagent-debian" do |pd|
+      pd.vm.box = "bento/debian-10.3"
+      pd.vm.hostname = "puppetagent-debian"
+      pd.vm.network "private_network", ip: "192.168.69.4"
+    end
+    config.vm.define "puppetagent-windows" do |pw|
+      pw.vm.box = "gusztavvargadr/windows-server"
+      pw.winrm.retry_limit = 5
+      pw.winrm.retry_delay = 20
+      pw.vm.hostname = "puppetagent-win"
+      pw.vm.network "private_network", ip: "192.168.69.6"
+      pw.vm.provision "install", type: "shell", inline: <<-SHELL
+        choco upgrade chocolatey -y
+        choco install bonjour -y
+        choco install pwsh -y
+      SHELL
+    end
+    config.vm.define "puppetmaster" do |pm|
+      pm.vm.hostname = "puppettest-master"
+      pm.vm.network "forwarded_port", guest: 80, host: 8080 # To test puppetboard.
+      pm.vm.network "private_network", ip: "192.168.69.2"
+      pm.vm.synced_folder "passthru/", "/vagrant/setup-tmp" # You may want to pop your eyaml keys and r10k yaml in here for ease.
+      pm.vm.provider "virtualbox" do |vb|
+        vb.memory = "4096" # extra memories for a Puppet master
+      end
+    end
+end
