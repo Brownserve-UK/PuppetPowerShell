@@ -4,3 +4,4 @@ paket-files/
 .log/
 .build/output/
 .bin/
+.vagrant/
