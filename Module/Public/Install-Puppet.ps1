@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-    Installs Puppet on a machine
+    Installs Puppet tooling on a machine
 .DESCRIPTION
-    Installs the requested version of Puppet agent/server for your operating system.
+    Installs the requested version of Puppet agent/server/bolt for your operating system.
     You can either specify the major version that you want installed whereby the latest version for that release will be installed,
     or you can specify a specific version. (e.g. 6.10.2)
 .EXAMPLE
@@ -13,6 +13,10 @@
     Install-Puppet -ExactVersion 6.10.2 -Application 'puppetserver'
 
     This would install Puppet server 6.10.2 for your operating system.
+.EXAMPLE
+    Install-Puppet -Application 'puppet-bolt'
+
+    This would install the latest version of Puppet bolt for your operating system.
 #>
 function Install-Puppet
 {
@@ -32,7 +36,7 @@ function Install-Puppet
         # Whether to install Puppet server or Puppet agent
         [Parameter(Mandatory = $false)]
         [string]
-        [ValidateSet('puppet-agent', 'puppetserver')]
+        [ValidateSet('puppet-agent', 'puppetserver', 'puppet-bolt')]
         $Application = 'puppet-agent'
     )
     
@@ -44,9 +48,9 @@ function Install-Puppet
             {
                 Throw "Puppet server is only available on Linux"
             }
-            # Do we want to do a Java check here?
         }
-        if (!$MajorVersion -and !$ExactVersion)
+        # We only care about the versioning of Puppet server/agent
+        if (!$MajorVersion -and !$ExactVersion -and ($Application -ne 'puppet-bolt'))
         {
             throw "One of 'MajorVersion' or 'ExactVersion' must be specified"
         }
@@ -65,7 +69,14 @@ function Install-Puppet
         # macOS install method
         if ($IsMacOS)
         {
-            Write-Verbose "Installing Puppet-Agent for macOS"
+            Write-Verbose "Installing $Application for macOS"
+            # This should work with both the legacy and Homebrew methods
+            $PuppetCheck = pkgutil --pkgs | Where-Object { $_ -like "*$Application*" }
+            if ($PuppetCheck)
+            {
+                Write-Host "$Application is already installed:`n$($PuppetCheck)"
+                break
+            }
             $RootCheck = & id -u
             try
             {
@@ -81,14 +92,25 @@ function Install-Puppet
                 }
                 # In cases where we don't want an exact version _and_ homebrew is available we'll install using that
                 # See here for more info https://github.com/puppetlabs/homebrew-puppet
-                $Cask = "puppetlabs/puppet/puppet-agent-$MajorVersion"
+                if ($Application -eq 'puppet-bolt')
+                {
+                    $Cask = "puppetlabs/puppet/$Application"
+                }
+                else
+                {
+                    $Cask = "puppetlabs/puppet/$Application-$MajorVersion"
+                }
                 Write-Verbose "Installing $Cask"
                 & brew install $Cask
                 if ($LASTEXITCODE -ne 0)
                 {
-                    throw "Failed to install Puppet using brew"
+                    throw "Failed to install $Application using brew"
                 }
             }
+            <#
+                When homebrew is not available or we require a specific version we'll need to query the pupetlabs downloads
+                We do this by scrubbing the links at http://downloads.puppet.com/mac/ which isn't foolproof but should be good enough
+             #>
             if (!$BrewCheck -or $ExactVersion)
             {
                 Write-Warning "Homebrew not installed or exact version specified, falling back to legacy method"
@@ -102,7 +124,14 @@ function Install-Puppet
                     throw "Failed to determine macOS version"
                 }
                 Write-Verbose "macOS version is $OSVersion"
-                $BaseURL = "http://downloads.puppet.com/mac/puppet$($MajorVersion)"
+                if ($Application -eq 'puppet-agent')
+                {
+                    $BaseURL = "http://downloads.puppet.com/mac/puppet$($MajorVersion)"
+                }
+                else
+                {
+                    $BaseURL = "http://downloads.puppet.com/mac/puppet-tools"
+                }
                 Write-Verbose "Querying $BaseURL for supported operating systems"
                 # Get the contents of that folder and see if we can find a match for our OS version
                 try
@@ -151,15 +180,15 @@ function Install-Puppet
                 # Grab the exact version if we've specified one otherwise just get latest
                 if ($ExactVersion)
                 {
-                    $DownloadURL = $BaseURL + "/puppet-agent-$($ExactVersion.ToString())-1.osx$($MatchedVersion -replace '\/','').dmg"
+                    $DownloadURL = $BaseURL + "/$Application-$($ExactVersion.ToString())-1.osx$($MatchedVersion -replace '\/','').dmg"
                 }
                 else
                 {
-                    $DownloadURL = $BaseURL + "/puppet-agent-latest.dmg"
+                    $DownloadURL = $BaseURL + "/$Application-latest.dmg"
                 }
 
                 # Download it
-                $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet-agent.dmg'
+                $TempFile = Join-Path (Get-PSDrive Temp).Root "$Application.dmg"
                 Write-Verbose "Downloading from $DownloadURL to $TempFile"
                 try
                 {
@@ -167,7 +196,7 @@ function Install-Puppet
                 }
                 catch
                 {
-                    throw "Failed to download Puppet agent from $DownloadURL.`n$($_.Exception.Message)"
+                    throw "Failed to download $Application from $DownloadURL.`n$($_.Exception.Message)"
                 }
                 Write-Verbose "Mounting $TempFile"
                 & hdiutil mount $TempFile -quiet
@@ -177,7 +206,7 @@ function Install-Puppet
                 }
                 try
                 {
-                    $PuppetDrive = Get-ChildItem '/Volumes/' | Where-Object { $_.Name -like 'puppet-agent*' }
+                    $PuppetDrive = Get-ChildItem '/Volumes/' | Where-Object { $_.Name -like "$Application*" }
                 }
                 catch
                 {
@@ -197,7 +226,7 @@ function Install-Puppet
                 {
                     # Clean-up
                     & hdiutil unmount $PuppetDrive -force -quiet
-                    throw "Cannot find Puppet agent pkg installer"
+                    throw "Cannot find $Application pkg installer"
                 }
                 Write-Verbose "Installing $PuppetPKG"
                 & installer -pkg $PuppetPKG -target /
@@ -205,7 +234,7 @@ function Install-Puppet
                 {
                     # Clean-up
                     & hdiutil unmount $PuppetDrive -force -quiet
-                    throw "Failed to install Puppet agent"
+                    throw "Failed to install $Application"
                 }
                 # Clean-up
                 & hdiutil unmount $PuppetDrive -force -quiet
@@ -220,6 +249,23 @@ function Install-Puppet
             {
                 throw "Must be run as administrator"
             }
+            switch ($Application)
+            {
+                'puppet-agent'
+                {
+                    $Command = 'puppet'
+                }
+                'puppet-bolt' 
+                {
+                    $Command = 'bolt'
+                }
+            }
+            $PuppetCheck = Get-Command $Command -ErrorAction SilentlyContinue
+            if ($PuppetCheck)
+            {
+                Write-Host "$Application is already installed:`n$($PuppetCheck.Source)"
+                break
+            }
             try
             {
                 $ChocoCheck = Get-Command 'choco'
@@ -227,43 +273,63 @@ function Install-Puppet
             catch {}
             if ($ChocoCheck)
             {
-                if (!$ExactVersion)
-                {
-                    # If we've only specified the major version then we need to do some work
-                    # Get all versions of the package
-                    $AvailableVersions = (& choco list -e puppet-agent -a -r) -replace 'puppet-agent\|', ''
-
-                    # As it stands the latest version is always first in the array
-                    $VersionToInstall = $AvailableVersions[0]
-                    Write-Verbose "Latest versions appears to be $VersionToInstall"
-                }
-                else
+                if ($ExactVersion)
                 {
                     $VersionToInstall = $ExactVersion.ToString()
                 }
-                Write-Verbose "Attempting to install $VersionToInstall"
-                & choco install 'puppet-agent' --version $VersionToInstall
+                else
+                {
+                    if ($MajorVersion)
+                    {
+                        # If we've only specified the major version then we need to do some work
+                        # Get all versions of the package
+                        $AvailableVersions = (& choco list -e $Application -a -r) -replace "$Application\|", ''
+                        # Cast to version array
+                        $AvailableVersionNumbers = $AvailableVersions | ForEach-Object { [version]$_ }
+
+                        
+                        # As it stands the latest version is always first in the array
+                        $VersionToInstall = ($AvailableVersionNumbers | Where-Object { $_.Major -eq $MajorVersion } | Select-Object -First 1).ToString()
+                        Write-Verbose "Latest version appears to be $VersionToInstall"
+                    }
+                }
+                Write-Verbose "Attempting to install $Application"
+                if ($VersionToInstall)
+                {
+                    & choco install $Application --version $VersionToInstall
+                }
+                else
+                {
+                    & choco install $Application
+                }
                 if ($LASTEXITCODE -ne 0)
                 {
-                    throw "Failed to install Puppet agent"
+                    throw "Failed to install $Application"
                 }
             }
             else
             {
                 Write-Warning "Chocolatey not available, falling back to legacy method"
-                $BaseURL = "http://downloads.puppetlabs.com/windows/puppet$($MajorVersion)"
-
-                if ($ExactVersion)
+                if ($Application -eq 'puppet-agent')
                 {
-                    $DownloadURL = $BaseURL + "/puppet-agent-$($ExactVersion.ToString())-x64.msi"
+                    $BaseURL = "http://downloads.puppetlabs.com/windows/puppet$($MajorVersion)"
                 }
                 else
                 {
-                    $DownloadURL = $BaseURL + "/puppet-agent-x64-latest.msi"
+                    $BaseURL = "http://downloads.puppetlabs.com/windows/puppet-tools"
+                }
+
+                if ($ExactVersion)
+                {
+                    $DownloadURL = $BaseURL + "/$Application-$($ExactVersion.ToString())-x64.msi"
+                }
+                else
+                {
+                    $DownloadURL = $BaseURL + "/$Application-x64-latest.msi"
                 }
 
                 # Download it
-                $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet-agent.msi'
+                $TempFile = Join-Path (Get-PSDrive Temp).Root "$Application.msi"
                 Write-Verbose "Downloading from $DownloadURL to $TempFile"
                 try
                 {
@@ -271,7 +337,7 @@ function Install-Puppet
                 }
                 catch
                 {
-                    throw "Failed to download Puppet agent.`n$($_.Exception.Message)"
+                    throw "Failed to download $Application.`n$($_.Exception.Message)"
                 }
 
                 # Install it
@@ -307,7 +373,14 @@ function Install-Puppet
                     }
                     Write-Verbose "Installing $Application for CentOS"
                     $CentOSVersion = (& awk -F= '/^VERSION_ID/{print $2}' /etc/os-release) -replace '\"', ''
-                    $RepositoryURL = "https://yum.puppetlabs.com/puppet$MajorVersion-release-el-$CentOSVersion.noarch.rpm"
+                    if ($Application -eq 'puppet-bolt')
+                    {
+                        $RepositoryURL = "https://yum.puppet.com/puppet-tools-release-el-$CentOSVersion.noarch.rpm"
+                    }
+                    else
+                    {
+                        $RepositoryURL = "https://yum.puppetlabs.com/puppet$MajorVersion-release-el-$CentOSVersion.noarch.rpm"
+                    }
                     $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet.rpm'
                     Write-Verbose "Downloading from $RepositoryURL to $TempFile"
                     try
@@ -350,7 +423,14 @@ function Install-Puppet
                     }
                     Write-Verbose "Installing $Application for Debian based OS"
                     $ReleaseName = & lsb_release -c -s
-                    $RepositoryURL = "http://apt.puppet.com/puppet$MajorVersion-release-$($ReleaseName).deb"
+                    if ($Application -eq 'puppet-bolt')
+                    {
+                        $RepositoryURL = "http://apt.puppet.com/puppet-tools-release-$($ReleaseName).deb"
+                    }
+                    else
+                    {
+                        $RepositoryURL = "http://apt.puppet.com/puppet$MajorVersion-release-$($ReleaseName).deb"
+                    }
                     $TempFile = Join-Path (Get-PSDrive Temp).Root 'puppet.deb'
                     Write-Verbose "Downloading from $RepositoryURL to $TempFile"
                     try
