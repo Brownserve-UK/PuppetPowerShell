@@ -116,7 +116,7 @@ function Install-Puppet
                 When homebrew is not available or we require a specific version we'll need to query the pupetlabs downloads
                 We do this by scrubbing the links at http://downloads.puppet.com/mac/ which isn't foolproof but should be good enough
              #>
-            if (!$BrewCheck -or $ExactVersion)
+            if (!$BrewCheck -or $ExactVersion -or $UseLegacyMethod)
             {
                 Write-Warning "Homebrew not installed or exact version specified, falling back to legacy method"
                 if ($RootCheck -ne 0)
