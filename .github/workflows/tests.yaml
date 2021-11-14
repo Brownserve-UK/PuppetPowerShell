@@ -1,0 +1,41 @@
+---
+# This will build and test the module on the various operating systems we support
+name: tests
+on: 
+  pull_request:
+    
+jobs:
+  macos-tests:
+    runs-on: macos-latest
+    steps:
+      - name: checkout-module
+        uses: actions/checkout@v2
+        with: 
+          path: Brownserve.BuildTools
+      - name: run-build-script
+        shell: pwsh
+        run: |
+            ./Brownserve.BuildTools/.build/build.ps1 -BranchName $env:GITHUB_REF -Verbose
+  linux-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-module
+        uses: actions/checkout@v2
+        with: 
+          path: Brownserve.BuildTools
+      - name: run-build-script
+        shell: pwsh
+        run: |
+            ./Brownserve.BuildTools/.build/build.ps1 -BranchName $env:GITHUB_REF -Verbose
+  windows-tests:
+    runs-on: windows-latest
+    steps:
+      - name: checkout-module
+        uses: actions/checkout@v2
+        with: 
+          path: Brownserve.BuildTools
+      - name: run-build-script
+        shell: pwsh
+        run: |
+            ./Brownserve.BuildTools/.build/build.ps1 -BranchName $env:GITHUB_REF -Verbose
+          
