@@ -1,6 +1,6 @@
 ---
 # This will build and test the module on the various operating systems we support
-name: tests
+name: test
 on: 
   pull_request:
     
