@@ -180,8 +180,8 @@ task CreateNugetPackage GenerateVersionInfo, GenerateModuleManifest, CopyModule,
     <authors>Shoddy Guard</authors>
     <owners>Brownserve UK</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <summary>A collection of helpful functions that aid in working with Puppet.</summary>
-    <description>A collection of helpful functions that aid in working with Puppet.</description>
+    <summary>A collection of tools for aiding in the deployment and management of Puppet tools.</summary>
+    <description>A collection of tools for aiding in the deployment and management of Puppet tools.</description>
     <projectUrl>https://github.com/Brownserve-UK/PuppetPowerShell</projectUrl>
     <releaseNotes>$script:ReleaseNotes</releaseNotes>
     <readme>README.md</readme>
