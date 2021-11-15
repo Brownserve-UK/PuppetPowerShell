@@ -24,5 +24,5 @@ Installs Puppet tooling on a machine
 Sets CSR extension attributes for Puppet agent requests
 
 ### [Set-PuppetConfigOption](Set-PuppetConfigOption.md)
-Sets Puppet configuration options
+Sets Puppet configuration options.
 
