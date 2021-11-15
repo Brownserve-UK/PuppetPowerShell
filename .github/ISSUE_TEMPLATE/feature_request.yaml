@@ -1,0 +1,20 @@
+name: 'Feature Request'
+description: 'Request a new feature or an enhancement'
+title: '[ENH]: '
+labels:
+  - 'feature request'
+  - 'enhancement'
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill in this feature request!
+        Please help us to prioritize this by filling in the below information.
+  - type: textarea
+    id: feature
+    attributes:
+      label: Describe the feature/enhancement you'd like added
+      description: Try to be descriptive and include example code or suggestions wherever possible.
+      placeholder: (e.g. it would be great if `Install-Puppet` could also return execution time, you could implement this by doing _xyz_)
+    validations:
+      required: true
