@@ -85,7 +85,7 @@ $global:RepoBinDirectory = $RepoBinDirectory | Convert-Path
 
 # We use paket for managing our dependencies and we get that via dotnet
 Write-Verbose "Restoring dotnet tools"
-$DotnetOutput = & dotnet tool restore
+& dotnet tool restore
 if ($LASTEXITCODE -ne 0)
 {
     $DotnetOutput
@@ -93,7 +93,7 @@ if ($LASTEXITCODE -ne 0)
 }
 
 Write-Verbose "Installing paket dependencies"
-$PaketOutput = & dotnet paket install
+& dotnet paket install
 if ($LASTEXITCODE -ne 0)
 {
     $PaketOutput
