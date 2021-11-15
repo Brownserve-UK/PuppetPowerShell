@@ -129,6 +129,88 @@ catch
 ### Start user defined _init steps
 $global:RepoTestsDirectory = Join-Path $global:RepoRootDirectory '.build' 'tests' | Convert-Path
 $global:RepoModuleDirectory = Join-Path $global:RepoRootDirectory 'Module' | Convert-Path
+$global:RepoDocsDirectory = Join-Path $global:RepoRootDirectory '.docs' | Convert-Path
+
+# Download PlatyPS as it's not available as a NuGet package :(
+try
+{
+    Write-Verbose "Downloading platyPS module"
+    Save-Module 'platyPS' -Repository PSGallery -Path $Global:RepoPackagesDirectory
+}
+catch
+{
+    throw "Failed to download the platyPS module.`n$($_.Exception.Message)"
+}
+try
+{
+    Get-ChildItem (Join-Path $Global:RepoPackagesDirectory -ChildPath 'platyPS') -Filter 'platyPS.psd1' -Recurse | 
+        Import-Module -Force -Verbose:$false
+}
+catch
+{
+    throw "Failed to import the platyPS module.`n$($_.Exception.Message)"
+}
+# The GUID for the PowerShell module we're building
+$Global:ModuleGUID = '277386fb-3fc3-4aea-ba95-2073613c0275'
+function global:Update-Documentation
+{
+    $ErrorActionPreference = 'Stop'
+    Write-Progress -Activity "Updating PuppetPowerShell documentation" -PercentComplete 0
+    Write-Host "Updating PuppetPowerShell documentation..."
+    try
+    {
+        # We'll need to set this so that we can generate help regardless of what OS we are on...
+        $global:IgnoreCmdletCompatibility = $true
+        # We now need to remove the Brownserve.BuildTools module as if the cmdlets have changed the updates 
+        # won't be picked up until a re-import
+        Write-Progress -Activity "Updating PuppetPowerShell documentation" -Status "Re-importing the PuppetPowerShell module" -PercentComplete 15
+        Write-Verbose "Re-Importing the PuppetPowerShell module"
+        If (Get-Module 'PuppetPowerShell')
+        {
+            Remove-Module 'PuppetPowerShell'
+        }
+        Import-Module (Join-Path $Global:RepoModuleDirectory -ChildPath 'PuppetPowerShell.psm1') -Verbose:$false -Force # Force so we always get an up-to-date module
+
+        # Now we can update our public cmdlets
+        Write-Progress -Activity "Updating PuppetPowerShell documentation" -Status "Updating 'Public' Markdown documentation" -PercentComplete 30
+        Write-Host "Updating 'Public' Markdown documentation..."
+        Update-MarkdownHelpModule `
+            -Path $global:RepoDocsDirectory `
+            -AlphabeticParamsOrder `
+            -RefreshModulePage `
+            -UpdateInputOutput `
+            -ExcludeDontShow | Out-Null
+    }
+    catch
+    {
+        throw "Failed to update Markdown help for the module.`n$($_.Exception.Message)"
+    }
+    finally
+    {
+        $global:IgnoreCmdletCompatibility = $false
+    }
+    Write-Progress -Activity "Updating PuppetPowerShell documentation" -Completed
+    Write-Host "Markdown help has been successfully updated!" -ForegroundColor Green
+}
+
+# And another helper function for updating the modules help
+function global:Update-ModuleHelp
+{
+    $ErrorActionPreference = 'Stop'
+    Write-Host "Generating module help from Markdown files..."
+    try
+    {
+        New-ExternalHelp `
+            -Path $global:RepoDocsDirectory `
+            -OutputPath (Join-Path $Global:RepoModuleDirectory -ChildPath 'en-US') `
+            -Force | Out-Null
+    }
+    catch
+    {
+        throw "Failed to update module XML help file.`n$($_.Exception.Message)"
+    }
+    Write-Host "Module XML help successfully updated!" -ForegroundColor Green
+}
 ### End user defined _init steps
 
 # If we're not suppressing output then we'll pipe out a list of cmdlets that are now available to the user along with
