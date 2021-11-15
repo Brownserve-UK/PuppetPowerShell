@@ -130,6 +130,7 @@ catch
 $global:RepoTestsDirectory = Join-Path $global:RepoRootDirectory '.build' 'tests' | Convert-Path
 $global:RepoModuleDirectory = Join-Path $global:RepoRootDirectory 'Module' | Convert-Path
 $global:RepoDocsDirectory = Join-Path $global:RepoRootDirectory '.docs' | Convert-Path
+$global:RepoBuildTasksDirectory = Join-Path $global:RepoRootDirectory '.build' 'tasks' | Convert-Path
 
 # Download PlatyPS as it's not available as a NuGet package :(
 try
