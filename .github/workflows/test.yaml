@@ -14,9 +14,9 @@ jobs:
       - name: checkout-module
         uses: actions/checkout@v2
         with: 
-          path: Brownserve.BuildTools
+          path: PuppetPowerShell
       - name: run-build-script
         shell: pwsh
         run: |
-            ./Brownserve.BuildTools/.build/build.ps1 -BranchName $env:GITHUB_REF -Verbose
+            ./PuppetPowerShell/.build/build.ps1 -BranchName $env:GITHUB_REF -Verbose
   

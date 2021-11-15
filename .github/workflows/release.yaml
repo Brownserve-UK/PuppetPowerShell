@@ -1,0 +1,24 @@
+---
+# Will perform a GitHub release
+
+name: release
+on:
+  workflow_dispatch:
+    
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-module
+        uses: actions/checkout@v2
+        with: 
+          path: PuppetPowerShell
+      - name: run-build-script
+        env:
+          GitHubPAT: ${{ secrets.GITHUBPAT }}
+          NugetFeedAPIKey: ${{ secrets.NugetFeedAPIKey }}
+          PSGalleryAPIKey: ${{ secrets.PSGalleryAPIKey }}
+        shell: pwsh
+        run: |
+            ./PuppetPowerShell/.build/build.ps1 -BranchName $env:GITHUB_REF -Build 'release' -NugetFeedAPIKey $env:NugetFeedAPIKey -PSGalleryAPIKey $env:PSGalleryAPIKey -Verbose
