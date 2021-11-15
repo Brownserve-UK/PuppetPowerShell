@@ -144,12 +144,29 @@ catch
 }
 try
 {
-    Get-ChildItem (Join-Path $Global:RepoPackagesDirectory -ChildPath 'platyPS') -Filter 'platyPS.psd1' -Recurse | 
-        Import-Module -Force -Verbose:$false
+    Write-Verbose "Importing external modules"
+    @(
+        (Join-Path $Global:RepoPackagesDirectory 'Invoke-Build' -AdditionalChildPath 'tools', 'InvokeBuild.psd1'),
+        (Join-Path $Global:RepoPackagesDirectory 'Pester' -AdditionalChildPath 'tools', 'Pester.psd1'),
+        (Get-ChildItem (Join-Path $Global:RepoPackagesDirectory -ChildPath 'platyPS') -Filter 'platyPS.psd1' -Recurse)
+    ) | ForEach-Object {
+        Import-Module $_ -Force -Verbose:$false
+    }
 }
 catch
 {
-    throw "Failed to import the platyPS module.`n$($_.Exception.Message)"
+    throw $_.Exception.Message
+}
+# Set an alias to Nuget.exe and update an env var
+# This ensures we use the local version every time
+try
+{
+    Set-Alias -Name 'nuget' -Value (Join-Path $global:RepoPackagesDirectory 'NuGet.CommandLine' 'tools', 'NuGet.exe') -Scope Global
+    $Global:NugetPath = (Get-Command 'nuget').Definition
+}
+catch
+{
+    throw $_.Exception.Message
 }
 # The GUID for the PowerShell module we're building
 $Global:ModuleGUID = '277386fb-3fc3-4aea-ba95-2073613c0275'

@@ -122,7 +122,7 @@ task CheckPreviousRelease GenerateVersionInfo, {
 task CopyModule {
     Write-Verbose "Copying files to build output directory"
     # Copy the "Module" folder over to the build output folder under 'PuppetPowerShell'
-    Copy-Item -Path $Global:ModuleDirectory -Destination $global:BuiltModuleDirectory -Recurse -Force
+    Copy-Item -Path $Global:RepoModuleDirectory -Destination $global:BuiltModuleDirectory -Recurse -Force
 }
 
 # Synopsis: Generates the module manifest
