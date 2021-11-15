@@ -12,6 +12,72 @@ $PublicCmdlets = @()
 $CompatibleCmdlets = @()
 $IncompatibleCmdlets = @()
 
+# Let's see if we've got the commands available in our path
+try
+{
+    $AgentCheck = Get-Command 'puppet'
+    $BoltCheck = Get-Command 'bolt'
+    $ServerCheck = Get-Command 'puppetserver'
+}
+catch {}
+
+# If not try to make best guesses as to where they will be
+if (!$AgentCheck)
+{
+    if ($IsWindows)
+    {
+        $AgentPath = 'C:\ProgramData\PuppetLabs\puppet\bin\puppet.bat'
+    }
+    else
+    {
+        $AgentPath = '/opt/puppetlabs/bin/puppet'
+    }
+    try
+    {
+        $AgentCheck = Get-Command $AgentPath
+    }
+    catch {}
+    if ($AgentCheck)
+    {
+        Set-Alias 'puppet' $AgentPath -Scope Global
+    }
+}
+if (!$BoltCheck)
+{
+    if ($IsWindows)
+    {
+        $BoltPath = 'C:\ProgramData\PuppetLabs\bolt\bolt.bat'
+    }
+    else
+    {
+        $BoltPath = '/opt/puppetlabs/bin/bolt'
+    }
+    try
+    {
+        $BoltCheck = Get-Command $BoltPath
+    }
+    catch{}
+    if ($BoltCheck)
+    {
+        Set-Alias 'bolt' $BoltPath -Scope Global
+    }
+}
+if ($IsLinux)
+{
+    if (!$ServerCheck)
+    {
+        $ServerPath = '/opt/puppetlabs/bin/puppetserver'
+        try
+        {
+            $ServerCheck = Get-Command $ServerPath
+        }
+        catch{}
+    }
+    if ($ServerCheck)
+    {
+        Set-Alias 'puppetserver' $ServerPath -Scope Global
+    }
+}
 
 # Dot source our private functions so they are available for our public functions to use
 # Join-Path $PSScriptRoot -ChildPath 'Private' |
