@@ -1,7 +1,7 @@
 ---
 Module Name: PuppetPowerShell
 Module Guid: 277386fb-3fc3-4aea-ba95-2073613c0275
-Download Help Link: https://github.com/Brownserve-UK/PuppetPowerShell/tree/main/.docs/
+Download Help Link: https://github.com/Brownserve-UK/PuppetPowerShell/tree/main/.docs/PuppetPowerShell.md
 Help Version: 1.0.0.0
 Locale: en-US
 ---
