@@ -141,7 +141,7 @@ task GenerateModuleManifest CopyModule, {
         -CompanyName 'Brownserve UK' `
         -RootModule 'PuppetPowerShell.psm1' `
         -ModuleVersion "$script:Version" `
-        -Description 'A collection of tools to aid in CI/CD deployments.' `
+        -Description 'A collection of tools for aiding in the deployment and management of Puppet tools.' `
         -PowerShellVersion '6.0' `
         -ReleaseNotes $script:ReleaseNotes `
         -LicenseUri 'https://github.com/Brownserve-UK/PuppetPowerShell/blob/main/LICENSE' `
