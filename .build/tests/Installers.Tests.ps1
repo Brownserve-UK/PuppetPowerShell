@@ -5,7 +5,7 @@
 Describe "Puppet installers" {
     # First we need to set-up our containers
     BeforeAll {
-        $Dockerfiles = Get-ChildItem (Join-Path $global:RepoTestsDirectory 'Containers' $global:OS) -Force | Where-Object { $_.Name -match "Dockerfile" }
+        $Dockerfiles = Get-ChildItem (Join-Path $global:RepoTestsDirectory 'Containers' $global:OS) -Recurse -Force | Where-Object { $_.Name -match "Dockerfile" }
         $Dockerfiles | ForEach-Object {
             # Bit funky but allows us to catch nested Linux distributions
             $tag = "PuppetPowershell_$(Get-Item $_.PSParentPath -Force | Select-Object -ExpandProperty Name)".ToLower()
@@ -15,10 +15,6 @@ Describe "Puppet installers" {
                 Write-Error "Failed to build container: $tag"
             }
             $global:Containers += $tag
-        }
-        if ($global:Containers.Count -eq 0)
-        {
-            throw "Containers variable ended up empty."
         }
     }
     Context "Puppet agent installer" {
@@ -80,11 +76,7 @@ Describe "Puppet installers" {
                         # This volume mount will need tidying up for Windows containers...
                         if ($null -eq $_)
                         {
-                            throw "`$_ appears to be null!"
-                        }
-                        else
-                        {
-                            $_
+                            throw "`$Containers appears to be null!"
                         }
                         & docker run --rm -v $global:RepoModuleDirectory/:/module $_ 'pwsh' '-Command' "$InstallScript"
                         # Do another test for exact version?
