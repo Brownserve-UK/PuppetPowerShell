@@ -54,7 +54,7 @@ Describe "Puppet installers" {
                     $InstallScript = {
                         if ($IsWindows)
                         {
-                            $ModulePath = "C:\module\PuppetPowerShell.psm1"
+                            $ModulePath = 'C:\module\PuppetPowerShell.psm1'
                         }
                         else
                         {
