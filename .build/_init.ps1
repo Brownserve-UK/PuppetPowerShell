@@ -84,8 +84,10 @@ $global:RepoBinDirectory = $RepoBinDirectory | Convert-Path
 
 
 # We use paket for managing our dependencies and we get that via dotnet
+# Make sure we're in the repo root directory so commands run as expected
+Set-Location $Global:RepoRootDirectory
 Write-Verbose "Restoring dotnet tools"
-& dotnet tool restore
+$DotnetOutput = & dotnet tool restore
 if ($LASTEXITCODE -ne 0)
 {
     $DotnetOutput
@@ -93,7 +95,7 @@ if ($LASTEXITCODE -ne 0)
 }
 
 Write-Verbose "Installing paket dependencies"
-& dotnet paket install
+$PaketOutput = & dotnet paket install
 if ($LASTEXITCODE -ne 0)
 {
     $PaketOutput
