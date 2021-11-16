@@ -20,31 +20,57 @@ Describe "Puppet installers" {
     }
     Context "Puppet agent installer" {
         It "Should install on $global:OS" {
-
             {
                 # on macOS we can't run the tests via Docker at the moment so use vagrant
                 if ($IsMacOS)
                 {
-                    Write-Verbose "macOS, using vagrant"
-                    $Vagrantfile = Get-ChildItem (Join-Path $global:RepoTestsDirectory 'Vagrant' 'Vagrantfile')
-                    Push-Location
-                    Set-Location $Vagrantfile.PSParentPath
-                    & vagrant up puppetagent-macos
-                    if ($LASTEXITCODE -ne 0)
+                    # On Cloud based runners it's a real crapshoot if vagrant will work so just test locally
+                    # (we don't care about what we do to a cloud runner!)
+                    if ($env:CloudRunner)
                     {
+                        try
+                        {
+                            Join-Path $global:BuiltModuleDirectory -ChildPath "PuppetPowerShell.psd1" | Import-Module -Force -Verbose:$false
+                        }
+                        catch
+                        {
+                            throw "Failed to import PuppetPowerShell module.`n$($_.Exception.Message)"
+                        }
+                        try 
+                        {
+                            # This should give a nice mix of tests
+                            Install-Puppet -MajorVersion 6 -Application 'puppet-agent' -UseLegacyMethod
+                            Install-Puppet -Application 'bolt'
+                        }
+                        catch 
+                        {
+                            throw "Failed to install tooling.`n$($_.Exception.Message)"
+                        }
+                    }
+                    # If we're not running on a cloud provider then we don't want to pollute our local install so use vagrant
+                    else
+                    {
+                        Write-Verbose "macOS, using vagrant"
+                        $Vagrantfile = Get-ChildItem (Join-Path $global:RepoTestsDirectory 'Vagrant' 'Vagrantfile')
+                        Push-Location
+                        Set-Location $Vagrantfile.PSParentPath
+                        & vagrant up puppetagent-macos
+                        if ($LASTEXITCODE -ne 0)
+                        {
+                            Pop-Location
+                            throw "Failed to bring up Vagrant environment"
+                        }
+                        & vagrant ssh puppetagent-macos -c "pwsh -c 'Import-Module /usr/local/vagrant/Module/PuppetPowerShell.psm1 -Force; Install-Puppet -MajorVersion 6; Install-Puppet -Application puppet-bolt'"
+                        if ($LASTEXITCODE -ne 0)
+                        {
+                            $ErrorMessage = "Failed to install Puppet agent on macOS"
+                        }
+                        & vagrant destroy -f
                         Pop-Location
-                        throw "Failed to bring up Vagrant environment"
-                    }
-                    & vagrant ssh puppetagent-macos -c "pwsh -c 'Import-Module /usr/local/vagrant/Module/PuppetPowerShell.psm1 -Force; Install-Puppet -MajorVersion 6; Install-Puppet -Application puppet-bolt'"
-                    if ($LASTEXITCODE -ne 0)
-                    {
-                        $ErrorMessage = "Failed to install Puppet agent on macOS"
-                    }
-                    & vagrant destroy -f
-                    Pop-Location
-                    if ($ErrorMessage)
-                    {
-                        throw $ErrorMessage
+                        if ($ErrorMessage)
+                        {
+                            throw $ErrorMessage
+                        }
                     }
                 }
                 else

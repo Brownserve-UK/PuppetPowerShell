@@ -28,6 +28,8 @@ jobs:
           path: PuppetPowerShell
       - name: run-build-script
         shell: pwsh
+        env: 
+          CloudRunner: true
         run: |
             ./PuppetPowerShell/.build/build.ps1 -BranchName $env:GITHUB_REF -Verbose
   
