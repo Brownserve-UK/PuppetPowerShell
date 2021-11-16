@@ -78,7 +78,15 @@ Describe "Puppet installers" {
                         {
                             throw "`$Containers appears to be null!"
                         }
-                        & docker run --rm -v $global:RepoModuleDirectory/:/module $_ 'pwsh' '-Command' "$InstallScript"
+                        if ($IsWindows)
+                        {
+                            $Volume = "$global:RepoModuleDirectory\:C:\module"
+                        }
+                        else
+                        {
+                            $Volume = "$global:RepoModuleDirectory/:/module"
+                        }
+                        & docker run --rm -v $Volume $_ 'pwsh' '-Command' "$InstallScript"
                         # Do another test for exact version?
                         if ($LASTEXITCODE -ne 0)
                         {
