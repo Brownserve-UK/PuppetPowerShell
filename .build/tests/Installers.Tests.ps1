@@ -40,7 +40,7 @@ Describe "Puppet installers" {
                         {
                             # This should give a nice mix of tests
                             Install-Puppet -MajorVersion 6 -Application 'puppet-agent'
-                            Install-Puppet -Application 'bolt'
+                            Install-Puppet -Application 'puppet-bolt'
                         }
                         catch 
                         {
