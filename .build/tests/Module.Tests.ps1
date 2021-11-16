@@ -3,7 +3,11 @@
 #   Performs tests to make sure the PowerShell module works as intended
 BeforeAll {
     # Remove the module we've already imported 😬
-    Remove-Module PuppetPowerShell -Verbose:$false
+    $ModuleCheck = Get-Module | Where-Object { $_.Name -eq "PuppetPowerShell" }
+    if ($ModuleCheck)
+    {
+        Remove-Module PuppetPowerShell -Verbose:$false
+    }
 }
 Describe 'ModuleImport' {
     Context 'When PuppetPowerShell is imported' {
@@ -14,7 +18,7 @@ Describe 'ModuleImport' {
             @{Filter = 'Install-Puppet'; Expected = 'Install-Puppet' }
         ) {
             param ($Filter, $Expected)
-            $Commands = Get-Command -name $Filter
+            $Commands = Get-Command -Name $Filter
             $Commands.Name | Should -Be $Expected
         }
     }
