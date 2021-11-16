@@ -39,7 +39,7 @@ Describe "Puppet installers" {
                         try 
                         {
                             # This should give a nice mix of tests
-                            Install-Puppet -MajorVersion 6 -Application 'puppet-agent' -UseLegacyMethod
+                            Install-Puppet -MajorVersion 6 -Application 'puppet-agent'
                             Install-Puppet -Application 'bolt'
                         }
                         catch 
