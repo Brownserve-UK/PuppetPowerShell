@@ -10,7 +10,15 @@ Describe "Puppet installers" {
             # Bit funky but allows us to catch nested Linux distributions
             $tag = "PuppetPowershell_$(Get-Item $_.PSParentPath -Force | Select-Object -ExpandProperty Name)".ToLower()
             & docker build -t $tag ($_.PSParentPath | Convert-Path)
+            if ($LASTEXITCODE -ne 0)
+            {
+                Write-Error "Failed to build container: $tag"
+            }
             $global:Containers += $tag
+        }
+        if ($global:Containers.Count -eq 0)
+        {
+            throw "Containers variable ended up empty."
         }
     }
     Context "Puppet agent installer" {
@@ -70,6 +78,14 @@ Describe "Puppet installers" {
             
                     $global:Containers | ForEach-Object {
                         # This volume mount will need tidying up for Windows containers...
+                        if ($null -eq $_)
+                        {
+                            throw "`$_ appears to be null!"
+                        }
+                        else
+                        {
+                            $_
+                        }
                         & docker run --rm -v $global:RepoModuleDirectory/:/module $_ 'pwsh' '-Command' "$InstallScript"
                         # Do another test for exact version?
                         if ($LASTEXITCODE -ne 0)
