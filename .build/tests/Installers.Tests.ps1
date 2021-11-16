@@ -10,7 +10,7 @@ Describe "Puppet installers" {
             # Bit funky but allows us to catch nested Linux distributions
             $tag = "PuppetPowershell_$(Get-Item $_.PSParentPath -Force | Select-Object -ExpandProperty Name)".ToLower()
             & docker build -t $tag ($_.PSParentPath | Convert-Path)
-            $script:Containers += $tag
+            $global:Containers += $tag
         }
     }
 }
@@ -69,7 +69,7 @@ Context "Puppet agent installer" {
                     Install-Puppet -Application puppet-bolt
                 }
             
-                $script:Containers | ForEach-Object {
+                $global:Containers | ForEach-Object {
                     # This volume mount will need tidying up for Windows containers...
                     & docker run --rm -v $global:RepoModuleDirectory/:/module $_ 'pwsh' '-Command' "$InstallScript"
                     # Do another test for exact version?
