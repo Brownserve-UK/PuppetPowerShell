@@ -5,7 +5,7 @@
 Describe "Puppet installers" {
     # First we need to set-up our containers
     BeforeAll {
-        $Dockerfiles = Get-ChildItem (Join-Path $global:RepoTestsDirectory 'containers' $global:OS) -Force | Where-Object { $_.Name -match "Dockerfile" }
+        $Dockerfiles = Get-ChildItem (Join-Path $global:RepoTestsDirectory 'Containers' $global:OS) -Force | Where-Object { $_.Name -match "Dockerfile" }
         $Dockerfiles | ForEach-Object {
             # Bit funky but allows us to catch nested Linux distributions
             $tag = "PuppetPowershell_$(Get-Item $_.PSParentPath -Force | Select-Object -ExpandProperty Name)".ToLower()
