@@ -394,6 +394,15 @@ function Install-Puppet
                         Write-Host "$Application already installed:`n$PuppetCheck"
                         break
                     }
+                    if ($Application -eq 'puppetserver')
+                    {
+                        # We need to make sure we have git and ruby installed
+                        & yum install -y git ruby
+                        if ($LASTEXITCODE -ne 0)
+                        {
+                            throw "Failed to install git and ruby"
+                        }
+                    }
                     Write-Verbose "Installing $Application for CentOS"
                     $CentOSVersion = (& awk -F= '/^VERSION_ID/{print $2}' /etc/os-release) -replace '\"', ''
                     if ($Application -eq 'puppet-bolt')
@@ -443,6 +452,15 @@ function Install-Puppet
                     {
                         Write-Host "$Application is already installed on your system."
                         break
+                    }
+                    if ($Application -eq 'puppetserver')
+                    {
+                        # We need to make sure we have git and ruby installed
+                        & apt-get install -y git ruby
+                        if ($LASTEXITCODE -ne 0)
+                        {
+                            throw "Failed to install git and ruby"
+                        }
                     }
                     Write-Verbose "Installing $Application for Debian based OS"
                     $ReleaseName = & lsb_release -c -s
