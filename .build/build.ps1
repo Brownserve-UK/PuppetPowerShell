@@ -48,7 +48,7 @@ param
     )]
     [ValidateNotNullOrEmpty()]
     [string]
-    $GitHubRepo = 'Brownserve.PSTools',
+    $GitHubRepo = 'PuppetPowerShell',
     
     # The PAT for pushing to GitHub
     [Parameter(
