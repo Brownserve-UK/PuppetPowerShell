@@ -20,8 +20,8 @@ jobs:
       - name: run-build-script
         env:
           GitHubPAT: ${{ secrets.AUTOMATED_BUILD_GITHUB_PAT }}
-          NugetFeedAPIKey: ${{ secrets.TEMP_NUGET }}
-          PSGalleryAPIKey: ${{ secrets.TEMP_PSGALLERY }}
+          NugetFeedAPIKey: ${{ secrets.NUGET_API_KEY }}
+          PSGalleryAPIKey: ${{ secrets.PSGALLERY_API_KEY }}
         shell: pwsh
         run: |
             ./PuppetPowerShell/.build/build.ps1 -BranchName $env:GITHUB_REF -Build 'release' -NugetFeedAPIKey $env:NugetFeedAPIKey -PSGalleryAPIKey $env:PSGalleryAPIKey -Verbose
