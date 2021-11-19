@@ -9,4 +9,4 @@ These tools are designed to be cross-platform and have been tested on:
 * CentOS 7
 * macOS 10.14
 
-Documentation can be found in the [GitHub repository](https://github.com/Brownserve-UK/PuppetPowerShell/tree/main/.docs/PuppetPowerShell.md)
+For help on specific cmdlets please check the [documentation](https://github.com/Brownserve-UK/PuppetPowerShell/tree/main/.docs/PuppetPowerShell.md)
