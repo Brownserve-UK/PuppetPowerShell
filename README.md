@@ -1,3 +1,4 @@
+[![release](https://github.com/Brownserve-UK/PuppetPowerShell/actions/workflows/release.yaml/badge.svg)](https://github.com/Brownserve-UK/PuppetPowerShell/actions/workflows/release.yaml)
 # PuppetPowerShell
 
 A PowerShell module that contains a handful of helpful functions that aid in working with Puppet.
