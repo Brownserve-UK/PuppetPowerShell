@@ -1,0 +1,11 @@
+source https://api.nuget.org/v3/index.json
+nuget Brownserve.PSTools
+
+# We'll use Invoke-Build to make building our nuget package easy as peas
+nuget Invoke-Build
+
+# Pester for unit tests
+nuget Pester
+
+# We'll need nuget to package things
+nuget NuGet.CommandLine

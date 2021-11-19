@@ -1,0 +1,61 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure("2") do |config|
+    config.vm.box = "bento/ubuntu-18.04"
+    config.vm.synced_folder "../../../", "/vagrant"
+    # config
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 2
+    end
+
+    # Ubuntu box
+    config.vm.define "puppetagent-ubuntu" do |pu|
+      # Temporary until we get our own vagrant stuff runnng
+      pu.vm.provision "install", type: "shell", inline: <<-SHELL
+        apt-get update && apt-get -y install --no-install-recommends apt-utils 2>&1
+        apt-get -y install git procps lsb-release
+        apt-get install -y wget apt-transport-https software-properties-common
+        wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+        dpkg -i packages-microsoft-prod.deb
+        apt-get update
+        add-apt-repository universe
+        apt-get install -y powershell
+        rm packages-microsoft-prod.deb
+      SHELL
+    end
+
+    # Debian box
+    config.vm.define "puppetagent-debian" do |pd|
+      pd.vm.box = "bento/debian-10.3"
+    end
+
+    # macOS box
+    config.vm.define "puppetagent-macos" do |pm|
+      # Use this box until we've got our own
+      pm.vm.box = "yzgyyang/macOS-10.14"
+      pm.vm.boot_timeout = 900
+      pm.vm.provider "virtualbox" do |vb|
+        vb.memory = "4096"
+        vb.cpus = 4
+      end
+      pm.vm.synced_folder "../../../", "/vagrant", disabled: true
+      pm.vm.synced_folder "../../../", "/usr/local/vagrant", type: "rsync",
+          rsync__args: ["--verbose", "--rsync-path='sudo rsync'", "--archive", "--delete", "-z"], rsync__chown: false
+      pm.vm.provision "install", privileged: false, type: "shell", inline: <<-SHELL
+        brew install powershell
+      SHELL
+    end
+
+    # Windows box
+    config.vm.define "puppetagent-windows" do |pw|
+      pw.vm.box = "gusztavvargadr/windows-server"
+      pw.winrm.retry_limit = 5
+      pw.winrm.retry_delay = 20
+      pw.vm.provision "install", type: "shell", inline: <<-SHELL
+        choco upgrade chocolatey -y
+        choco install bonjour -y
+        choco install pwsh -y
+      SHELL
+    end
+end

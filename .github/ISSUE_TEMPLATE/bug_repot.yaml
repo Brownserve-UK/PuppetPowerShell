@@ -1,0 +1,43 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: [bug, needs investigation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!  
+        Please help us prioritize this by filling in the information below. 
+  - type: input
+    id: cmdlet
+    attributes:
+      label: Function/Cmdlet
+      description: Which cmdlet/function was the bug found in?
+      placeholder: Please enter the name of the cmdlet/function (eg Install-Puppet)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What went wrong?
+      description: What was the bug that you encountered? (Please be specific)
+      placeholder: Describe the problem you encountered
+      value: |
+        Example:
+        When using Install-Puppet sometimes I get an error stating the system cannot find the file specified.
+        This only happens when I use PowerShell 6.1.1.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: What are the steps to reproduce this issue?
+      render: powershell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output/Logs
+      description: Please provide the output from the command with the `-Verbose` flag set.

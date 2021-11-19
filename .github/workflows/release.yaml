@@ -1,0 +1,27 @@
+---
+# Will perform a GitHub release
+
+name: release
+on:
+  workflow_dispatch:
+    
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+      - name: checkout-module
+        uses: actions/checkout@v2
+        with: 
+          path: PuppetPowerShell
+      - name: run-build-script
+        env:
+          GitHubPAT: ${{ secrets.AUTOMATED_BUILD_GITHUB_PAT }}
+          NugetFeedAPIKey: ${{ secrets.NUGET_API_KEY }}
+          PSGalleryAPIKey: ${{ secrets.PSGALLERY_API_KEY }}
+        shell: pwsh
+        run: |
+            ./PuppetPowerShell/.build/build.ps1 -BranchName $env:GITHUB_REF -Build 'release' -NugetFeedAPIKey $env:NugetFeedAPIKey -PSGalleryAPIKey $env:PSGalleryAPIKey -Verbose

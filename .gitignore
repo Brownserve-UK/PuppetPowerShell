@@ -1,0 +1,7 @@
+paket.lock
+packages/
+paket-files/
+.log/
+.build/output/
+.bin/
+.vagrant/
