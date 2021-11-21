@@ -5,6 +5,17 @@ This changelog follows the [SemVer v1.0.0 spec](https://semver.org/spec/v1.0.0.h
 
 ## Release
 
+### [v0.1.2](https://github.com/Brownserve-UK/PuppetPowerShell/tree/v0.1.2) (2021-11-21)
+
+**Features**
+- Ensures dependencies are present when installing Puppetserver
+
+**Bugfixes**
+N/A
+
+**Known Issues**
+N/A
+
 ### [v0.1.1](https://github.com/Brownserve-UK/PuppetPowerShell/tree/v0.1.1) (2021-11-19)
 
 **Features**
