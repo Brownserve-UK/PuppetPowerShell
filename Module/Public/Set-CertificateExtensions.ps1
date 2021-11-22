@@ -58,14 +58,14 @@ function Set-CertificateExtensions
     
     process
     {
-        $CSRYamlContent = "extension_requests:"
+        $CSRYamlContent = "extension_requests:`n"
         # Make sure they are all valid
         $ExtensionAttributes.GetEnumerator() | ForEach-Object {
             if ($_.Key -notin $ValidExtensionShortNames)
             {
                 throw "Invalid extension short name: $($_.Key)"
             }
-            $CSRYamlContent += "    $($_.Key): $($_.Value)"
+            $CSRYamlContent += "    $($_.Key): $($_.Value)`n"
         }
         # Things are in different places depending on OS
         if ($IsLinux -or $IsMacOS)
