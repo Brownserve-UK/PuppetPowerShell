@@ -5,6 +5,17 @@ This changelog follows the [SemVer v1.0.0 spec](https://semver.org/spec/v1.0.0.h
 
 ## Release
 
+### [v0.1.3](https://github.com/Brownserve-UK/PuppetPowerShell/tree/v0.1.3) (2021-11-22)
+
+**Features**
+- Set newlines on csr_attributes.yaml
+
+**Bugfixes**
+- Fixes csr_attributes.yaml being incorrectly formatted
+
+**Known Issues**
+N/A
+
 ### [v0.1.2](https://github.com/Brownserve-UK/PuppetPowerShell/tree/v0.1.2) (2021-11-21)
 
 **Features**
