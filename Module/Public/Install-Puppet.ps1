@@ -291,6 +291,10 @@ function Install-Puppet
                         $AvailableVersions = (& choco list -e $Application -a -r) -replace "$Application\|", ''
                         # Cast to version array
                         $AvailableVersionNumbers = $AvailableVersions | ForEach-Object { [version]$_ }
+                        if (!$AvailableVersionNumbers)
+                        {
+                            throw "Failed to get available versions of $Application. This is quite possibly due to a bug in Chocolatey, try running 'choco upgrade chocolatey' to see if this fixes the problem."
+                        }
 
                         
                         # As it stands the latest version is always first in the array
@@ -301,7 +305,7 @@ function Install-Puppet
                         }
                         catch
                         {
-                            throw "Failed to find a version to install."
+                            throw "Failed to find a version to install.`n$($_.Exception.Message)"
                         }
                         if (!$VersionToInstall)
                         {
