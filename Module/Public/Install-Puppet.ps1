@@ -478,6 +478,23 @@ function Install-Puppet
                             }
                         }
                         Write-Verbose "Installing $Application for Debian based OS"
+                        try
+                        {
+                            Get-Command 'lsb_release' -ErrorAction Stop
+                        }
+                        catch
+                        {
+                            $InstallLSB = $true
+                        }
+                        if ($InstallLSB)
+                        {
+                            Write-Verbose 'lsb-release requires installation'
+                            & apt-get install -y lsb-release
+                            if ($LASTEXITCODE -ne 0)
+                            {
+                                throw 'Failed to install lsb-release'
+                            }
+                        }
                         $ReleaseName = & lsb_release -c -s
                         if ($Application -eq 'puppet-bolt')
                         {
