@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/microsoft-windows-servercore
-ARG VARIANT="1809"
+ARG VARIANT="2004"
 FROM mcr.microsoft.com/windows/servercore:${VARIANT}
 
 # As we're only using this for testing purposes this should be fine
