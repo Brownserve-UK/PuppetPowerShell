@@ -5,6 +5,18 @@ This changelog follows the [SemVer v1.0.0 spec](https://semver.org/spec/v1.0.0.h
 
 ## Release
 
+### [v0.1.4](https://github.com/Brownserve-UK/PuppetPowerShell/tree/v0.1.4) (2022-10-07)
+
+**Features**
+- Install the `lsb-release` package on Debian based systems if it is not present. This package is needed so that we can determine the correct version of Puppet to install and on some forks (e.g. Proxmox) it is not installed by default.
+- Bump Windows build/test tasks to use the latest version of the Docker container
+
+**Bugfixes**
+- Fixes [#7](https://github.com/Brownserve-UK/PuppetPowerShell/issues/7)
+
+**Known Issues**
+N/A
+
 ### [v0.1.3](https://github.com/Brownserve-UK/PuppetPowerShell/tree/v0.1.3) (2021-11-22)
 
 **Features**
