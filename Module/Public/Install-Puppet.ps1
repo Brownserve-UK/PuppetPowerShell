@@ -44,7 +44,7 @@ function Install-Puppet
         [switch]
         $UseLegacyMethod
     )
-    
+
     begin
     {
         if ($Application -eq 'puppetserver')
@@ -68,7 +68,7 @@ function Install-Puppet
             [int]$MajorVersion = $ExactVersion.Major
         }
     }
-    
+
     process
     {
         # macOS install method
@@ -263,7 +263,7 @@ function Install-Puppet
                 {
                     $Command = 'puppet'
                 }
-                'puppet-bolt' 
+                'puppet-bolt'
                 {
                     $Command = 'bolt'
                 }
@@ -301,12 +301,12 @@ function Install-Puppet
                                 throw "Failed to get available versions of $Application. This is quite possibly due to a bug in Chocolatey, try running 'choco upgrade chocolatey' to see if this fixes the problem."
                             }
 
-                        
+
                             # As it stands the latest version is always first in the array
                             try
                             {
                                 $VersionToInstall = ($AvailableVersionNumbers | Where-Object { $_.Major -eq $MajorVersion } | Select-Object -First 1).ToString()
-    
+
                             }
                             catch
                             {
@@ -540,17 +540,17 @@ function Install-Puppet
                         }
                     }
                 }
-                Default 
+                Default
                 {
                     throw "Unsupported Linux distribution '$Distribution'"
                 }
             }
         }
-                
+
     }
-    
+
     end
     {
-        
+
     }
 }
