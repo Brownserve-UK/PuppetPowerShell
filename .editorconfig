@@ -1,0 +1,17 @@
+# EditorConfig is awesome: http://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+
+[*]
+insert_final_newline = true
+indent_size = 2
+end_of_line = lf
+indent_style = space
+
+[{*.ps1,*.psm1,*.psd1,*.ps1.template}]
+end_of_line = lf
+charset = utf-8
+indent_style = space
+indent_size = 4
